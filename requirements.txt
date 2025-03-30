@@ -1,0 +1,2 @@
+# This project uses only Python standard library
+# Minimum Python version required: 3.6 
