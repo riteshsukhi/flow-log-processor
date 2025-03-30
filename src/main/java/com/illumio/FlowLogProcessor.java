@@ -30,7 +30,7 @@ public class FlowLogProcessor {
         try (BufferedReader reader = Files.newBufferedReader(Paths.get(lookupFile))) {
             String header = reader.readLine();
             if (!header.equals("dstport,protocol,tag")) {
-                throw new IOException("Invalid lookup table format");
+                throw new IllegalArgumentException("Invalid lookup table format");
             }
 
             String line;
