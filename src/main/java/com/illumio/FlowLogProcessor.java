@@ -105,7 +105,7 @@ public class FlowLogProcessor {
     public void printResults() {
         // Print tag counts
         System.out.println("\nTag Counts:\n");
-        System.out.println("Tag.             Count");
+        System.out.println("Tag             Count");
         System.out.println("--------------------");
         
         tagCounts.entrySet().stream()
@@ -114,7 +114,7 @@ public class FlowLogProcessor {
 
         // Print port/protocol combination counts
         System.out.println("\nPort/Protocol Combination Counts:\n");
-        System.out.println("Port.   Protocol.   Count");
+        System.out.println("Port    Protocol        Count");
         System.out.println("------------------------------");
         portProtocolCounts.entrySet().stream()
             .sorted((a, b) -> {
@@ -126,9 +126,9 @@ public class FlowLogProcessor {
                        a.getKey().getProtocol().compareTo(b.getKey().getProtocol());
             })
             .forEach(entry -> {
-                System.out.printf("%-8s %-10s %d%n", 
-                    entry.getKey().getDstPort() + ".", 
-                    entry.getKey().getProtocol() + ".", 
+                System.out.printf("%-8s %-15s %d%n", 
+                    entry.getKey().getDstPort(), 
+                    entry.getKey().getProtocol(), 
                     entry.getValue());
             });
     }
