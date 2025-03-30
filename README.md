@@ -1,105 +1,138 @@
-# Flow Log Tag Mapper
+# Flow Log Processor
 
-This program processes flow log data and maps each row to a tag based on a lookup table. The lookup table contains mappings between destination port, protocol, and corresponding tags.
+A Java application that processes flow log entries and maps them to tags based on a lookup table. The program analyzes network traffic patterns by counting occurrences of specific port/protocol combinations and their associated tags.
 
-## Project Structure
-```
-.
-├── README.md
-├── pom.xml
-├── src/
-│   └── main/
-│       └── java/
-│           └── com/
-│               └── illumio/
-│                   ├── FlowLogProcessor.java
-│                   └── model/
-│                       └── LookupEntry.java
-├── sample_flow_logs.txt
-└── sample_lookup_table.csv
-```
+## Features
 
-## Assumptions
+- Processes flow log entries in a space-efficient manner
+- Maps entries to tags based on destination port and protocol
+- Case-insensitive protocol matching
+- Provides statistics on tag counts and port/protocol combinations
+- Thread-safe implementation
+- Comprehensive test coverage
 
-1. Input Files:
-   - Flow log file is a plain text file with space-separated values
-   - Lookup table is a CSV file with headers: dstport,protocol,tag
-   - Flow log file size can be up to 10 MB
-   - Lookup table can have up to 10,000 mappings
+## Prerequisites
 
-2. Processing:
-   - Tag matching is case-insensitive
-   - One tag can map to multiple port/protocol combinations
-   - If no matching tag is found, the flow is marked as "Untagged"
-   - Port numbers in the lookup table are treated as strings for exact matching
-   - Protocol names in the lookup table are treated as strings for exact matching
-
-3. Output:
-   - Results are written to stdout
-   - Counts are sorted alphabetically for tags and numerically for ports
-
-## Requirements
 - Java 11 or higher
 - Maven 3.6 or higher
 
+## Assumptions
+
+1. **Flow Log Format**:
+   - Each line contains space-separated fields
+   - Fields are in the order: version, account-id, interface-id, srcaddr, dstaddr, srcport, dstport, protocol, packets, bytes, start, end, action, log-status
+   - Protocol numbers are mapped as follows:
+     - 6 → TCP
+     - 17 → UDP
+
+2. **Lookup Table Format**:
+   - CSV file with header row: "dstport,protocol,tag"
+   - Each subsequent row contains: port number, protocol name, and tag
+   - Protocol names are case-insensitive
+   - No duplicate port/protocol combinations
+
+3. **Memory Efficiency**:
+   - Program processes one line at a time
+   - Uses efficient data structures for lookups and counting
+   - Maintains minimal state for statistics
+
+4. **Error Handling**:
+   - Invalid flow log entries are skipped
+   - Invalid lookup table format raises an exception
+   - File I/O errors are properly handled
+
 ## Building the Project
 
-1. Clone the repository
-2. Navigate to the project directory
-3. Build the project:
-   ```bash
-   mvn clean package
-   ```
-
-## Usage
-
-1. Prepare your input files:
-   - Flow log file (space-separated values)
-   - Lookup table (CSV format with headers: dstport,protocol,tag)
-
-2. Run the program:
-   ```bash
-   java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar <flow_log_file> <lookup_table_file>
-   ```
-
-3. The program will output:
-   - Tag counts (including Untagged)
-   - Port/Protocol combination counts
-
-## Sample Output
-```
-Tag Counts:
-Tag             Count
-SV_P3          1
-Untagged       2
-sv_P1          2
-sv_P2          2
-
-Port/Protocol Combination Counts:
-Port    Protocol        Count
-23      tcp            1
-25      tcp            1
-31      udp            1
-68      udp            1
-80      tcp            1
-443     tcp            1
+```bash
+mvn clean package
 ```
 
-## Testing
-The program has been tested with:
-- Sample flow logs up to 10MB
-- Lookup tables with various sizes
-- Different tag formats and cases
-- Missing or invalid data
-- Edge cases in port/protocol combinations
+This will create two JAR files in the `target` directory:
+- `flow-log-processor-1.0-SNAPSHOT.jar`: Contains only the project classes
+- `flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar`: Contains all dependencies
 
-## Implementation Details
+## Running the Program
 
-The Java implementation:
-- Uses Java 11 features like `Map.of()` for immutable collections
-- Implements proper resource management with try-with-resources
-- Uses Java streams for efficient data processing and sorting
-- Follows object-oriented principles with proper encapsulation
-- Includes comprehensive error handling
-- Uses efficient data structures (HashMap) for lookups
-- Implements proper equals() and hashCode() for custom objects 
+```bash
+java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar <flow_log_file> <lookup_table_file>
+```
+
+Example:
+```bash
+java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar flow.log lookup.csv
+```
+
+## Test Coverage
+
+The project includes comprehensive test cases:
+
+### LookupEntry Tests
+- Equality comparison
+- Hash code consistency
+- Case-insensitive protocol matching
+- Getter methods
+
+### FlowLogProcessor Tests
+- Basic flow log processing
+- Case-insensitive protocol handling
+- Untagged entries handling
+- Invalid flow log format handling
+- Invalid lookup table format handling
+
+To run the tests:
+```bash
+mvn test
+```
+
+## Performance Analysis
+
+1. **Time Complexity**:
+   - Flow log processing: O(n) where n is the number of lines
+   - Lookup operations: O(1) using HashMap
+   - Statistics generation: O(m log m) where m is the number of unique entries
+
+2. **Space Complexity**:
+   - Lookup table: O(k) where k is the number of lookup entries
+   - Statistics: O(m) where m is the number of unique port/protocol combinations
+
+3. **Memory Usage**:
+   - Processes one line at a time
+   - Maintains minimal state for counting
+   - Uses efficient data structures for lookups
+
+## Design Decisions
+
+1. **Immutable Data Classes**:
+   - `LookupEntry` is immutable for thread safety
+   - Prevents accidental modifications during processing
+
+2. **Thread Safety**:
+   - Uses thread-safe collections
+   - Returns unmodifiable views of statistics
+
+3. **Error Handling**:
+   - Graceful handling of invalid input
+   - Clear error messages for configuration issues
+
+4. **Code Organization**:
+   - Clear separation of concerns
+   - Modular design for easy maintenance
+   - Well-documented public API
+
+## Future Improvements
+
+1. **Performance Optimizations**:
+   - Parallel processing for large files
+   - Batch processing for better throughput
+   - Memory-mapped file support
+
+2. **Feature Additions**:
+   - Support for more protocol types
+   - Custom protocol mappings
+   - Additional statistics and analytics
+   - Export results in various formats
+
+3. **Monitoring and Logging**:
+   - Add detailed logging
+   - Performance metrics collection
+   - Progress reporting for large files 

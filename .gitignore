@@ -19,6 +19,10 @@
 *.tar.gz
 *.rar
 
+# virtual machine crash logs
+hs_err_pid*
+replay_pid*
+
 # Maven
 target/
 .mvn/
@@ -29,9 +33,9 @@ mvnw.cmd
 .idea/
 *.iml
 .vscode/
-.project
-.classpath
 .settings/
+.classpath
+.project
 
 # OS files
 .DS_Store

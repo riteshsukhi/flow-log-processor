@@ -57,7 +57,7 @@ public class FlowLogProcessor {
     }
 
     private void processLine(String line) {
-        String[] fields = line.split("\\s+");
+        String[] fields = line.strip().split("\\s+");
         if (fields.length < 8) return;
 
         String dstPort = fields[6];
@@ -98,6 +98,15 @@ public class FlowLogProcessor {
                         entry.getKey().getDstPort(),
                         entry.getKey().getProtocol(),
                         entry.getValue()));
+    }
+
+    // Getter methods for testing
+    public Map<String, Integer> getTagCounts() {
+        return Collections.unmodifiableMap(tagCounts);
+    }
+
+    public Map<LookupEntry, Integer> getPortProtocolCounts() {
+        return Collections.unmodifiableMap(portProtocolCounts);
     }
 
     public static void main(String[] args) {
