@@ -1,68 +1,43 @@
 # Flow Log Processor
 
-Processes VPC flow logs and maps entries to tags based on destination port and protocol combinations.
+A Java program that processes AWS VPC flow logs and maps them to tags based on destination port and protocol combinations.
 
-## Requirements
+## Quick Start
 
-- Java 11 or higher
-- Maven 3.6 or higher
-
-## Building from Source
-
-1. Clone the repository:
+1. Clone and build:
 ```bash
 git clone https://github.com/riteshsukhi/flow-log-processor.git
 cd flow-log-processor
-```
-
-2. Build the project:
-```bash
 mvn clean package
 ```
 
-This will create two JAR files in the `target` directory:
-- `flow-log-processor-1.0-SNAPSHOT.jar`: Contains only the project classes
-- `flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar`: Contains all dependencies
-
-## Running the Program
-
-1. Using sample data:
+2. Run with sample data:
 ```bash
 java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar sample_flow_logs.txt sample_lookup_table.csv output.txt
 ```
 
-2. Using your own data:
-```bash
-java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar <flow_log_file> <lookup_table_file> <output_file>
-```
-
-The program will generate an output file containing:
-- Count of matches for each tag
-- Count of matches for each port/protocol combination
-
 ## Input Files
 
-1. Flow Log File:
-   - Space-separated values following AWS VPC Flow Log format
-   - Required fields: version, account-id, interface-id, srcaddr, dstaddr, srcport, dstport, protocol, packets, bytes, start, end, action, log-status
-   - Sample file: `sample_flow_logs.txt`
+### Flow Log File
+- Space-separated values in AWS VPC Flow Log format
+- Fields: version, account-id, interface-id, srcaddr, dstaddr, srcport, dstport, protocol, packets, bytes, start, end, action, log-status
+- See `sample_flow_logs.txt` for example
 
-2. Lookup Table:
-   - CSV file with header: dstport,protocol,tag
-   - Sample file: `sample_lookup_table.csv`
-   - Example:
-     ```
-     dstport,protocol,tag
-     25,tcp,sv_P1
-     68,udp,sv_P2
-     23,tcp,sv_P1
-     31,udp,SV_P3
-     443,tcp,sv_P2
-     ```
+### Lookup Table
+- CSV file with header: dstport,protocol,tag
+- Example from `sample_lookup_table.csv`:
+```
+dstport,protocol,tag
+25,tcp,sv_P1
+68,udp,sv_P2
+23,tcp,sv_P1
+31,udp,SV_P3
+443,tcp,sv_P2
+```
 
-## Output Format
+## Output
 
-The output file will contain:
+The program generates an output file with tag counts and port/protocol combinations:
 
 ```
 Tag Counts:
@@ -86,6 +61,40 @@ Port    Protocol        Count
 8080     tcp             1
 ```
 
+## Key Features
+
+- Case-insensitive protocol matching
+- Handles files up to 10MB
+- Supports up to 10000 mappings
+- Multiple port/protocol combinations per tag
+- Protocol mapping: 6 → TCP, 17 → UDP
+- Skips invalid entries gracefully
+- Port range: 0-65535
+
+## Development
+
+### Requirements
+- Java 11+
+- Maven 3.6+
+
+### Running Tests
+```bash
+mvn test
+```
+
+### Test Coverage
+- Basic flow log processing
+- Case sensitivity handling
+- Input validation
+- Edge cases
+- Performance with large files
+
+### Implementation Notes
+- Uses buffered reading for large files
+- HashMap for fast lookups
+- Minimal memory usage
+- No external dependencies (except JUnit)
+
 ## Assumptions
 
 - Protocol numbers are mapped as follows:
@@ -98,41 +107,6 @@ Port    Protocol        Count
 - Flow log file size can be up to 10MB
 - Lookup table can contain up to 10000 mappings
 - Input files are plain text (ASCII) files
-
-## Testing
-
-Run the tests with:
-```bash
-mvn test
-```
-
-The test suite covers:
-1. Basic Flow Log Processing:
-   - Correct tag assignment
-   - Proper counting of matches
-   - Output format validation
-
-2. Case Sensitivity:
-   - Protocol matching is case-insensitive
-   - Tag matching is case-sensitive
-   - Port numbers are exact matches
-
-3. Input Validation:
-   - Invalid flow log entries are skipped
-   - Invalid lookup table entries are skipped
-   - Invalid port numbers are handled gracefully
-
-4. Edge Cases:
-   - Empty input files
-   - Missing fields
-   - Malformed data
-   - Untagged entries
-   - Multiple mappings for same tag
-
-5. Performance:
-   - Efficient processing of large files
-   - Memory usage optimization
-   - Proper resource cleanup
 
 ## Analysis
 
