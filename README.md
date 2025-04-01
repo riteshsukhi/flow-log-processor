@@ -95,6 +95,9 @@ Port    Protocol        Count
 - Invalid entries are skipped silently
 - Port numbers must be between 0 and 65535
 - One tag can map to multiple port/protocol combinations
+- Flow log file size can be up to 10MB
+- Lookup table can contain up to 10000 mappings
+- Input files are plain text (ASCII) files
 
 ## Testing
 
@@ -104,7 +107,56 @@ mvn test
 ```
 
 The test suite covers:
-- Basic flow log processing
-- Case-insensitive protocol matching
-- Invalid input handling
-- Edge cases 
+1. Basic Flow Log Processing:
+   - Correct tag assignment
+   - Proper counting of matches
+   - Output format validation
+
+2. Case Sensitivity:
+   - Protocol matching is case-insensitive
+   - Tag matching is case-sensitive
+   - Port numbers are exact matches
+
+3. Input Validation:
+   - Invalid flow log entries are skipped
+   - Invalid lookup table entries are skipped
+   - Invalid port numbers are handled gracefully
+
+4. Edge Cases:
+   - Empty input files
+   - Missing fields
+   - Malformed data
+   - Untagged entries
+   - Multiple mappings for same tag
+
+5. Performance:
+   - Efficient processing of large files
+   - Memory usage optimization
+   - Proper resource cleanup
+
+## Analysis
+
+1. Performance Considerations:
+   - Uses buffered reading for efficient file processing
+   - HashMap for O(1) lookup table access
+   - Minimal memory footprint
+   - No external dependencies (except JUnit for testing)
+
+2. Error Handling:
+   - Graceful handling of invalid inputs
+   - Clear error messages
+   - No program crashes on bad data
+   - Proper resource cleanup
+
+3. Scalability:
+   - Handles files up to 10MB
+   - Supports up to 10000 mappings
+   - Memory usage scales linearly with input size
+   - Efficient data structures for lookups
+
+4. Code Quality:
+   - Clean, maintainable code
+   - Comprehensive test coverage
+   - Clear separation of concerns
+   - Well-documented code
+   - Follows Java best practices 
