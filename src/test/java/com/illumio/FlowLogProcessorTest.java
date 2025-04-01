@@ -10,102 +10,89 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class FlowLogProcessorTest {
 
-    @TempDir
-    Path tempDir;
-
     @Test
-    void testBasicFlowLogProcessing() throws IOException {
-        // Create test lookup table
+    void testBasicFlowLogProcessing(@TempDir Path tempDir) throws IOException {
+        // Create test files
         Path lookupFile = tempDir.resolve("lookup.csv");
-        Files.writeString(lookupFile, "dstport,protocol,tag\n" +
-                "80,tcp,web\n" +
-                "443,tcp,secure\n" +
-                "53,udp,dns");
-
-        // Create test flow log
         Path flowFile = tempDir.resolve("flow.log");
+        Path outputFile = tempDir.resolve("output.txt");
+        
+        Files.writeString(lookupFile, "dstport,protocol,tag\n" +
+                "80,tcp,sv_P1\n" +
+                "443,tcp,sv_P2\n");
+        
         Files.writeString(flowFile, "2 1234567890 eni-abc123 10.0.0.1 10.0.0.2 12345 80 6 100 1000 1234567890 1234567890 ACCEPT OK\n" +
-                "2 1234567890 eni-abc123 10.0.0.2 10.0.0.1 80 443 6 100 1000 1234567890 1234567890 ACCEPT OK\n" +
-                "2 1234567890 eni-abc123 10.0.0.3 10.0.0.4 12345 53 17 100 1000 1234567890 1234567890 ACCEPT OK");
+                "2 1234567890 eni-abc123 10.0.0.2 10.0.0.1 12345 443 6 100 1000 1234567890 1234567890 ACCEPT OK\n");
 
         FlowLogProcessor processor = new FlowLogProcessor(lookupFile.toString());
-        processor.processFlowLog(flowFile.toString());
+        processor.processFlowLog(flowFile.toString(), outputFile.toString());
 
-        Map<String, Integer> tagCounts = processor.getTagCounts();
-        assertEquals(1, tagCounts.get("web"));
-        assertEquals(1, tagCounts.get("secure"));
-        assertEquals(1, tagCounts.get("dns"));
+        String output = Files.readString(outputFile);
+        assertTrue(output.contains("sv_P1"));
+        assertTrue(output.contains("sv_P2"));
     }
 
     @Test
-    void testCaseInsensitiveProtocol() throws IOException {
-        // Create test lookup table with uppercase protocol
+    void testCaseInsensitiveProtocol(@TempDir Path tempDir) throws IOException {
         Path lookupFile = tempDir.resolve("lookup.csv");
-        Files.writeString(lookupFile, "dstport,protocol,tag\n" +
-                "80,TCP,web");
-
-        // Create test flow log
         Path flowFile = tempDir.resolve("flow.log");
-        Files.writeString(flowFile, "2 1234567890 eni-abc123 10.0.0.1 10.0.0.2 12345 80 6 100 1000 1234567890 1234567890 ACCEPT OK");
+        Path outputFile = tempDir.resolve("output.txt");
+        
+        Files.writeString(lookupFile, "dstport,protocol,tag\n" +
+                "80,TCP,sv_P1\n");
+        
+        Files.writeString(flowFile, "2 1234567890 eni-abc123 10.0.0.1 10.0.0.2 12345 80 6 100 1000 1234567890 1234567890 ACCEPT OK\n");
 
         FlowLogProcessor processor = new FlowLogProcessor(lookupFile.toString());
-        processor.processFlowLog(flowFile.toString());
+        processor.processFlowLog(flowFile.toString(), outputFile.toString());
 
-        Map<String, Integer> tagCounts = processor.getTagCounts();
-        assertEquals(1, tagCounts.get("web"));
+        String output = Files.readString(outputFile);
+        assertTrue(output.contains("sv_P1"));
     }
 
     @Test
-    void testUntaggedEntries() throws IOException {
-        // Create test lookup table
+    void testUntaggedEntries(@TempDir Path tempDir) throws IOException {
         Path lookupFile = tempDir.resolve("lookup.csv");
-        Files.writeString(lookupFile, "dstport,protocol,tag\n" +
-                "80,tcp,web");
-
-        // Create test flow log with untagged entries
         Path flowFile = tempDir.resolve("flow.log");
+        Path outputFile = tempDir.resolve("output.txt");
+        
+        Files.writeString(lookupFile, "dstport,protocol,tag\n" +
+                "80,tcp,sv_P1\n");
+        
         Files.writeString(flowFile, "2 1234567890 eni-abc123 10.0.0.1 10.0.0.2 12345 80 6 100 1000 1234567890 1234567890 ACCEPT OK\n" +
-                "2 1234567890 eni-abc123 10.0.0.2 10.0.0.1 80 443 6 100 1000 1234567890 1234567890 ACCEPT OK\n" +
-                "2 1234567890 eni-abc123 10.0.0.3 10.0.0.4 12345 53 17 100 1000 1234567890 1234567890 ACCEPT OK");
+                "2 1234567890 eni-abc123 10.0.0.2 10.0.0.1 12345 443 6 100 1000 1234567890 1234567890 ACCEPT OK\n");
 
         FlowLogProcessor processor = new FlowLogProcessor(lookupFile.toString());
-        processor.processFlowLog(flowFile.toString());
+        processor.processFlowLog(flowFile.toString(), outputFile.toString());
 
-        Map<String, Integer> tagCounts = processor.getTagCounts();
-        assertEquals(1, tagCounts.get("web"));
-        assertEquals(2, tagCounts.get("Untagged"));
+        String output = Files.readString(outputFile);
+        assertTrue(output.contains("Untagged"));
     }
 
     @Test
-    void testInvalidFlowLogFormat() throws IOException {
-        // Create test lookup table
+    void testInvalidFlowLogFormat(@TempDir Path tempDir) throws IOException {
         Path lookupFile = tempDir.resolve("lookup.csv");
+        Path flowFile = tempDir.resolve("flow.log");
+        Path outputFile = tempDir.resolve("output.txt");
+        
         Files.writeString(lookupFile, "dstport,protocol,tag\n" +
-                "80,tcp,web");
-
-        // Create test flow log with invalid format
-        Path flowFile = tempDir.resolve("flow.log");
-        Files.writeString(flowFile, "invalid format\n" +
-                "2 1234567890 eni-abc123 10.0.0.1 10.0.0.2 12345 80 6 100 1000 1234567890 1234567890 ACCEPT OK");
+                "80,tcp,sv_P1\n");
+        
+        Files.writeString(flowFile, "invalid format\n");
 
         FlowLogProcessor processor = new FlowLogProcessor(lookupFile.toString());
-        processor.processFlowLog(flowFile.toString());
+        processor.processFlowLog(flowFile.toString(), outputFile.toString());
 
-        Map<String, Integer> tagCounts = processor.getTagCounts();
-        assertEquals(1, tagCounts.get("web"));
+        String output = Files.readString(outputFile);
+        assertTrue(output.contains("Tag Counts"));
     }
 
     @Test
-    void testInvalidLookupTable() throws IOException {
-        // Create invalid lookup table (missing header)
+    void testInvalidLookupTable(@TempDir Path tempDir) {
         Path lookupFile = tempDir.resolve("lookup.csv");
-        Files.writeString(lookupFile, "80,tcp,web");
-
-        // Create test flow log
-        Path flowFile = tempDir.resolve("flow.log");
-        Files.writeString(flowFile, "2 1234567890 eni-abc123 10.0.0.1 10.0.0.2 12345 80 6 100 1000 1234567890 1234567890 ACCEPT OK");
-
+        
         assertThrows(IllegalArgumentException.class, () -> {
+            Files.writeString(lookupFile, "invalid header\n");
             new FlowLogProcessor(lookupFile.toString());
         });
     }

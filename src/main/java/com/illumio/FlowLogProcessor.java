@@ -60,9 +60,18 @@ public class FlowLogProcessor {
         return lookup;
     }
 
-    public void processFlowLog(String flowFile) throws IOException {
+    public void processFlowLog(String flowFile, String outputFile) throws IOException {
         if (!Files.exists(Paths.get(flowFile))) {
             throw new FileNotFoundException(flowFile);
+        }
+
+        // Validate output file path
+        Path outputPath = Paths.get(outputFile);
+        if (outputPath.getParent() != null && !Files.exists(outputPath.getParent())) {
+            Files.createDirectories(outputPath.getParent());
+        }
+        if (Files.exists(outputPath) && !Files.isWritable(outputPath)) {
+            throw new IOException("Output file exists and is not writable: " + outputFile);
         }
 
         try (BufferedReader reader = Files.newBufferedReader(Paths.get(flowFile))) {
@@ -74,6 +83,38 @@ public class FlowLogProcessor {
                     // Skip invalid lines
                 }
             }
+        }
+
+        // Write results to output file
+        try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(Paths.get(outputFile)))) {
+            // Write tag counts
+            writer.println("\nTag Counts:\n");
+            writer.println("Tag             Count");
+            writer.println("--------------------");
+            
+            tagCounts.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> writer.printf("%-16s %d%n", entry.getKey(), entry.getValue()));
+
+            // Write port/protocol combination counts
+            writer.println("\nPort/Protocol Combination Counts:\n");
+            writer.println("Port    Protocol        Count");
+            writer.println("------------------------------");
+            portProtocolCounts.entrySet().stream()
+                .sorted((a, b) -> {
+                    int portCompare = Integer.compare(
+                        Integer.parseInt(a.getKey().getDstPort()), 
+                        Integer.parseInt(b.getKey().getDstPort())
+                    );
+                    return portCompare != 0 ? portCompare : 
+                           a.getKey().getProtocol().compareTo(b.getKey().getProtocol());
+                })
+                .forEach(entry -> {
+                    writer.printf("%-8s %-15s %d%n", 
+                        entry.getKey().getDstPort(), 
+                        entry.getKey().getProtocol(), 
+                        entry.getValue());
+                });
         }
     }
 
@@ -102,37 +143,6 @@ public class FlowLogProcessor {
         }
     }
 
-    public void printResults() {
-        // Print tag counts
-        System.out.println("\nTag Counts:\n");
-        System.out.println("Tag             Count");
-        System.out.println("--------------------");
-        
-        tagCounts.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> System.out.printf("%-16s %d%n", entry.getKey(), entry.getValue()));
-
-        // Print port/protocol combination counts
-        System.out.println("\nPort/Protocol Combination Counts:\n");
-        System.out.println("Port    Protocol        Count");
-        System.out.println("------------------------------");
-        portProtocolCounts.entrySet().stream()
-            .sorted((a, b) -> {
-                int portCompare = Integer.compare(
-                    Integer.parseInt(a.getKey().getDstPort()), 
-                    Integer.parseInt(b.getKey().getDstPort())
-                );
-                return portCompare != 0 ? portCompare : 
-                       a.getKey().getProtocol().compareTo(b.getKey().getProtocol());
-            })
-            .forEach(entry -> {
-                System.out.printf("%-8s %-15s %d%n", 
-                    entry.getKey().getDstPort(), 
-                    entry.getKey().getProtocol(), 
-                    entry.getValue());
-            });
-    }
-
     // Getter methods for testing
     public Map<String, Integer> getTagCounts() {
         return Collections.unmodifiableMap(tagCounts);
@@ -143,15 +153,14 @@ public class FlowLogProcessor {
     }
 
     public static void main(String[] args) {
-        if (args.length != 2) {
-            System.err.println("Usage: java FlowLogProcessor <flow_log_file> <lookup_table_file>");
+        if (args.length != 3) {
+            System.err.println("Usage: java FlowLogProcessor <flow_log_file> <lookup_table_file> <output_file>");
             System.exit(1);
         }
 
         try {
             FlowLogProcessor processor = new FlowLogProcessor(args[1]);
-            processor.processFlowLog(args[0]);
-            processor.printResults();
+            processor.processFlowLog(args[0], args[2]);
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             System.exit(1);

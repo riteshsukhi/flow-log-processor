@@ -28,13 +28,17 @@ This will create two JAR files in the `target` directory:
 
 1. Using sample data:
 ```bash
-java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar sample_flow_logs.txt sample_lookup_table.csv
+java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar sample_flow_logs.txt sample_lookup_table.csv output.txt
 ```
 
 2. Using your own data:
 ```bash
-java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar <flow_log_file> <lookup_table_file>
+java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar <flow_log_file> <lookup_table_file> <output_file>
 ```
+
+The program will generate an output file containing:
+- Count of matches for each tag
+- Count of matches for each port/protocol combination
 
 ## Input Files
 
@@ -56,6 +60,32 @@ java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar <flow
      443,tcp,sv_P2
      ```
 
+## Output Format
+
+The output file will contain:
+
+```
+Tag Counts:
+Tag             Count
+--------------------
+SV_P3            1
+Untagged         1
+sv_P1            3
+sv_P2            3
+
+Port/Protocol Combination Counts:
+Port    Protocol        Count
+------------------------------
+23       tcp             1
+25       tcp             1
+31       udp             1
+53       udp             1
+68       udp             1
+80       tcp             1
+443      tcp             1
+8080     tcp             1
+```
+
 ## Assumptions
 
 - Protocol numbers are mapped as follows:
@@ -65,28 +95,6 @@ java -jar target/flow-log-processor-1.0-SNAPSHOT-jar-with-dependencies.jar <flow
 - Invalid entries are skipped silently
 - Port numbers must be between 0 and 65535
 - One tag can map to multiple port/protocol combinations
-
-## Output Format
-
-```
-Tag Counts:
-Tag             Count
---------------------
-SV_P3           1
-Untagged        2
-sv_P1           2
-sv_P2           2
-
-Port/Protocol Combination Counts:
-Port    Protocol        Count
-------------------------------
-23       tcp             1
-25       tcp             1
-31       udp             1
-443      tcp             1
-68       udp             1
-80       tcp             1
-```
 
 ## Testing
 
